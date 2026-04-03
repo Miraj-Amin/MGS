@@ -67,3 +67,281 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:#f7f5f0;color:#2c3319
     <div class="tb">
       <button class="btn" onclick="clearAll()">Clear all</button>
       <span class="hn">Tap a player to advance them</span>
+    </div>
+  </div>
+  <div class="lg">
+    <strong>Shots:</strong> ¾ of handicap difference, rounded down<div class="f">⌊(High − Low) × ¾⌋</div>E.g. HCP 19 vs 15 → diff 4 → <strong>3 shots</strong>
+  </div>
+</div>
+
+<div id="wrapper">
+  <div class="bd" id="bd"></div>
+</div>
+
+<script>
+const SHEET_ID="18mtEHX_sWqI_9eLZLHmLuJgqLbzH_GlbFDOy1dYJnX4";
+const P={1:"Duncan Hayward",2:"Shaan Amin",3:"Shailesh (Puji) Amin",4:"Bhavin R Patel",5:"Dilpesh Amin",6:"Bhush Amin",7:"Jatin Patel",8:"Priyanka Amin",9:"Minesh (tin tin) Patel",10:"Dilpesh S Patel",11:"Jay Patel",12:"Paul Lewis",13:"Aaron D Patel",14:"Trushar Patel",15:"Mayur Patel",16:"Miken Amin",17:"Lokesh Patel",18:"Raj Amin",19:"Haresh Patel",20:"Miraj Amin",21:"Chetan Patel"};
+function sn(s){return s?s.replace(/ \(.*?\)/g,''):'TBD';}
+
+let hcps={},winners={};
+
+async function fetchHcp(){
+  try{
+    const r=await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent('Handicaps Calc')}`);
+    const t=await r.text(),m=t.match(/google\.visualization\.Query\.setResponse\(([\s\S]*?)\);?\s*$/);
+    if(!m) return;
+    const j=JSON.parse(m[1]);
+    
+    const c=j.table.cols.map(x=>(x.label||'').trim().toLowerCase().replace(/[\s-]+/g,'_'));
+    
+    j.table.rows.forEach(row=>{
+      const o={};
+      row.c.forEach((cell,i)=>{if(c[i])o[c[i]]=(cell&&cell.v!=null)?String(cell.v):'';});
+      
+      const nameKey = Object.keys(o).find(k => k.includes('name') || k.includes('player'));
+      let hcpKey = Object.keys(o).find(k => k.includes('full'));
+      if (!hcpKey) hcpKey = Object.keys(o).find(k => k.includes('handicap') || k.includes('hcp'));
+      
+      if(nameKey && hcpKey && o[nameKey]){
+        const cleanName = o[nameKey].toLowerCase().replace(/\s+/g, '');
+        hcps[cleanName] = parseFloat(o[hcpKey]);
+      }
+    });
+    render(); 
+  }catch(e){ console.error("Could not fetch handicaps.", e); }
+}
+
+function gh(n){
+  if(!n) return 0;
+  let s = n.toLowerCase().replace(/\s+/g, '');
+  if(s==="aaronpatel") s="aarondpatel";
+  if(s==="duncanh") s="duncanhayward";
+  if(s==="shaana") s="shaanamin";
+  if(s==="bhavinpatel") s="bhavinrpatel";
+  if(s==="mineshtintinpatel") s="minesh(tintin)patel";
+  for(const[k,v] of Object.entries(hcps)){
+    if(k.includes(s) || s.includes(k)) return v;
+  }
+  return 0;
+}
+
+function calcShots(a,b){if(!a||b===undefined)return null;const ha=gh(a),hb=gh(b),d=Math.abs(ha-hb),s=Math.floor(d*3/4);return{s,r:ha>hb?a:b};}
+
+const COL_LABELS=['Round 1 · Apr','Round 2 · May','Quarters · Jun','Semis · Jul','Final · Aug'];
+const D = {};
+let CW = 180;
+let COL_X = [];
+const MH = 77; 
+
+function buildLayout(w) {
+  for (let prop in D) { if (D.hasOwnProperty(prop)) delete D[prop]; }
+
+  CW = Math.max(175, Math.min(240, (w - 140) / 5 - 20)); 
+  const col_gap = (w - CW - 140) / 4; 
+  COL_X = [0, col_gap, col_gap*2, col_gap*3, col_gap*4];
+
+  const R2_Y = [80, 220, 360, 500, 640, 780, 920, 1060];
+
+  D.R2_1 = {col:1, cy:R2_Y[0], type:'match', p1:11, p2:12};
+  D.R2_2 = {col:1, cy:R2_Y[1], type:'match', feederTop:'R1_1', p2:13}; 
+  D.R2_3 = {col:1, cy:R2_Y[2], type:'match', p1:14, feederBot:'R1_2'}; 
+  D.R2_4 = {col:1, cy:R2_Y[3], type:'match', p1:15, p2:16};
+  D.R2_5 = {col:1, cy:R2_Y[4], type:'match', p1:17, feederBot:'R1_3'}; 
+  D.R2_6 = {col:1, cy:R2_Y[5], type:'match', feederTop:'R1_4', p2:18}; 
+  D.R2_7 = {col:1, cy:R2_Y[6], type:'match', p1:19, feederBot:'R1_5'}; 
+  D.R2_8 = {col:1, cy:R2_Y[7], type:'match', p1:20, p2:21};
+
+  D.R1_1 = {col:0, cy:D.R2_2.cy - 19, type:'match', p1:1, p2:2};
+  D.R1_2 = {col:0, cy:D.R2_3.cy + 19, type:'match', p1:3, p2:4};
+  D.R1_3 = {col:0, cy:D.R2_5.cy + 19, type:'match', p1:5, p2:6};
+  D.R1_4 = {col:0, cy:D.R2_6.cy - 19, type:'match', p1:7, p2:8};
+  D.R1_5 = {col:0, cy:D.R2_7.cy + 19, type:'match', p1:9, p2:10};
+
+  function mid(a,b){return(D[a].cy+D[b].cy)/2;}
+
+  D.R3_1 = {col:2, cy:mid('R2_1','R2_2'), type:'match', feeders:['R2_1','R2_2']};
+  D.R3_2 = {col:2, cy:mid('R2_3','R2_4'), type:'match', feeders:['R2_3','R2_4']};
+  D.R3_3 = {col:2, cy:mid('R2_5','R2_6'), type:'match', feeders:['R2_5','R2_6']};
+  D.R3_4 = {col:2, cy:mid('R2_7','R2_8'), type:'match', feeders:['R2_7','R2_8']};
+
+  D.SF_1 = {col:3, cy:mid('R3_1','R3_2'), type:'match', feeders:['R3_1','R3_2']};
+  D.SF_2 = {col:3, cy:mid('R3_3','R3_4'), type:'match', feeders:['R3_3','R3_4']};
+
+  D.FINAL = {col:4, cy:mid('SF_1','SF_2'), type:'match', feeders:['SF_1','SF_2']};
+}
+
+function getPlayers(id){
+  const n=D[id];
+  if(n.p1!==undefined&&n.p2!==undefined)return[
+    {ph:false,seed:n.p1,name:P[n.p1]},
+    {ph:false,seed:n.p2,name:P[n.p2]}
+  ];
+  if(n.feederTop)return[
+    resolveFeeder(n.feederTop),
+    {ph:false,seed:n.p2,name:P[n.p2]}
+  ];
+  if(n.feederBot)return[
+    {ph:false,seed:n.p1,name:P[n.p1]},
+    resolveFeeder(n.feederBot)
+  ];
+  const f=n.feeders;
+  if(f&&f.length===2)return[resolveFeeder(f[0]),resolveFeeder(f[1])];
+  return[];
+}
+
+function resolveFeeder(id){
+  const w=winners[id];
+  if(w)return{ph:false,seed:'',name:w};
+  return{ph:true,name:'TBD'};
+}
+
+function isPlayable(id){
+  const ps=getPlayers(id);
+  if(ps.length<2)return false;
+  return!ps[0].ph&&!ps[1].ph;
+}
+
+function toggle(id,name){
+  if(!isPlayable(id))return;
+  if(winners[id]===name)delete winners[id];else winners[id]=name;
+  const col=D[id].col;
+  for(const k of Object.keys(D))if(D[k].col>col&&(D[k].feeders||D[k].feederTop||D[k].feederBot))delete winners[k];
+  save();render();
+}
+function clearAll(){winners={};save();render();}
+function load(){try{const s=localStorage.getItem('mgs_mp4');if(s)winners=JSON.parse(s);}catch(e){}}
+function save(){try{localStorage.setItem('mgs_mp4',JSON.stringify(winners));}catch(e){}}
+
+function render(){
+  const wrapper = document.getElementById('wrapper');
+  const bd = document.getElementById('bd');
+  if(!wrapper || !bd) return;
+
+  const w = Math.max(wrapper.clientWidth, 1250); 
+  const h = 1150; 
+
+  buildLayout(w);
+
+  bd.style.width = w + 'px';
+  bd.style.height = h + 'px';
+  bd.innerHTML = '';
+
+  COL_LABELS.forEach((t,i)=>{
+    const d=document.createElement('div');d.className='lbl';
+    d.style.left=COL_X[i]+'px';d.style.width=CW+'px';d.textContent=t;
+    bd.appendChild(d);
+  });
+
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.style.cssText='position:absolute;top:0;left:0;pointer-events:none;z-index:1';
+  svg.setAttribute('width',w);svg.setAttribute('height',h);
+  bd.appendChild(svg);
+
+  for(const[id,n]of Object.entries(D)){
+    const x=COL_X[n.col];
+    const y=n.cy-MH/2;
+
+    const el=document.createElement('div');
+    el.className='cd';
+    el.style.left=x+'px';el.style.top=y+'px';el.style.width=CW+'px';
+    el.dataset.id=id;
+
+    const ps=getPlayers(id);
+    const play=isPlayable(id);
+    const win=winners[id]||null;
+
+    if(ps.length===2){
+      const si=(!ps[0].ph&&!ps[1].ph)?calcShots(ps[0].name,ps[1].name):null;
+      el.innerHTML=mkRow(id,ps[0],play,si,win)+mkRow(id,ps[1],play,si,win);
+      if(si&&si.s>0){
+        const rcv=sn(si.r).split(' ')[0];
+        el.innerHTML+=`<div class="sb">${rcv} gets ${si.s} shot${si.s>1?'s':''}</div>`;
+      }
+    }
+    bd.appendChild(el);
+  }
+
+  for(const[id,n]of Object.entries(D)){
+    if(n.feederTop || n.feederBot){
+       const feederId = n.feederTop || n.feederBot;
+       const f1=D[feederId];
+       const f1Right=COL_X[f1.col]+CW;
+       const tLeft=COL_X[n.col];
+       const active=!!winners[feederId];
+
+       const targetY = n.feederTop ? n.cy - 19 : n.cy + 19;
+       const midX=f1Right+(tLeft-f1Right)/2;
+       
+       ln(svg,f1Right,f1.cy,midX,f1.cy,active);
+       ln(svg,midX,f1.cy,midX,targetY,active);
+       ln(svg,midX,targetY,tLeft,targetY,active);
+    }
+
+    if(!n.feeders)continue;
+
+    if(n.feeders.length===2){
+      const[fid1,fid2]=n.feeders;
+      const f1=D[fid1],f2=D[fid2];
+      const target=n;
+
+      const f1Right=COL_X[f1.col]+CW;
+      const f2Right=COL_X[f2.col]+CW;
+      const tLeft=COL_X[target.col];
+      const maxRight=Math.max(f1Right,f2Right);
+      
+      let midX=maxRight+(tLeft-maxRight)/2;
+      
+      const y1=f1.cy, y2=f2.cy, yMid=target.cy;
+      const active1=!!winners[fid1];
+      const active2=!!winners[fid2];
+      const bothActive=active1&&active2;
+
+      ln(svg,f1Right,y1,midX,y1,active1);
+      ln(svg,f2Right,y2,midX,y2,active2);
+      ln(svg,midX,y1,midX,y2,bothActive);
+      ln(svg,midX,yMid,tLeft,yMid,bothActive);
+    }
+  }
+
+  const fw=winners['FINAL'];
+  if(fw){
+    const fy=D.FINAL.cy;
+    const el=document.createElement('div');el.className='winner-box';
+    el.style.left=(COL_X[4]+CW+20)+'px';
+    el.style.top=(fy-45)+'px';
+    el.innerHTML=`<div class="tr">🏆</div><div class="cn">${sn(fw)}</div><div class="ch">HCP ${gh(fw)}</div>`;
+    bd.appendChild(el);
+  }
+}
+
+function ln(svg,x1,y1,x2,y2,active){
+  const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+  l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+  l.setAttribute('stroke',active?'#2d5016':'#d4d0c8');
+  l.setAttribute('stroke-width',active?2:1.5);
+  svg.appendChild(l);
+}
+
+function mkRow(nid,slot,playable,si,win){
+  const ph=slot.ph;
+  let cls='rw';
+  if(ph)cls+=' ph';else if(playable)cls+=' ck';
+  if(win&&!ph&&win===slot.name)cls+=' wi';
+  const hv=(!ph)?gh(slot.name):0;
+  const hcH=(!ph&&hv)?`<span class="hc">${hv}</span>`:'';
+  const shH=(!ph&&si&&si.s>0&&si.r===slot.name)?`<span class="sh">+${si.s}</span>`:'';
+  const tkH=(win&&!ph&&win===slot.name)?'✓':'';
+  const sdH=(!ph&&slot.seed)?slot.seed:'';
+  const esc=(slot.name||'').replace(/'/g,"\\'");
+  const oc=(!ph&&playable)?` onclick="toggle('${nid}','${esc}')"`:'';
+  return `<div class="${cls}"${oc}><span class="sd">${sdH}</span><span class="nm">${ph?'TBD':sn(slot.name)}</span>${hcH}${shH}<span class="tk">${tkH}</span></div>`;
+}
+
+window.addEventListener('resize', () => requestAnimationFrame(render));
+
+load();
+render();
+fetchHcp();
+</script>
+</body>
+</html>
