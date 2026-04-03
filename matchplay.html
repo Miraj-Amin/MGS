@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MGS — Match Play 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+/* Allow horizontal scrolling on mobile */
+html, body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+body{font-family:'DM Sans',system-ui,sans-serif;background:#f7f5f0;color:#2c3319;-webkit-font-smoothing:antialiased;padding:20px;margin:0;min-height:100vh;display:flex;flex-direction:column}
+
+/* Responsive header - wraps on mobile */
+.top-wrapper{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;margin-bottom:20px;gap:15px;flex-shrink:0}
+.header-left{min-width:250px}
+.hdr{margin-bottom:12px}
+.title{font-family:'DM Serif Display',Georgia,serif;font-size:26px;color:#2d5016}
+.sub{font-size:11px;font-weight:700;color:#8b9474;letter-spacing:1.5px;text-transform:uppercase;margin:4px 0}
+.tb{display:flex;gap:10px;align-items:center}
+.btn{padding:8px 14px;border:1px solid #e8e4dc;background:#fff;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;font-family:inherit;color:#8b9474;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.btn:hover{background:#f6f6f2;color:#2d5016}
+.hn{font-size:11px;color:#8b9474}
+.lg{padding:10px 14px;background:#fff;border-radius:8px;border:1px solid #e8e4dc;font-size:11px;color:#8b9474;line-height:1.5;text-align:left;box-shadow:0 1px 3px rgba(0,0,0,0.02)}
+.lg strong{color:#333}
+.lg .f{font-family:'DM Serif Display',Georgia,serif;font-size:14px;color:#2d5016;margin:3px 0}
+
+/* Mobile Scrolling Wrapper - ensures it allows native touch swiping */
+#wrapper{flex:1;width:100%;min-height:1150px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+
+/* bd is now relative so the wrapper respects its width for scrolling */
+#bd{position:relative;margin:0;top:0;left:0}
+
+.lbl{position:absolute;top:0;text-align:center;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#8b9474}
+.cd{position:absolute;border-radius:8px;border:1px solid #ddd;overflow:hidden;z-index:2;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,0.04)}
+.rw{display:flex;align-items:center;height:38px;padding:0 8px;gap:6px;user-select:none}
+.rw+.rw{border-top:1px solid #eee}
+.rw.ck{cursor:pointer;transition:background .1s}.rw.ck:hover{background:#f6f6f2}
+.rw.wi{background:#e6ede0}.rw.wi .nm{color:#2d5016;font-weight:700}
+.rw.ph .nm{color:#bbb;font-style:italic}
+
+.sd{width:18px;font-size:11px;font-weight:800;color:#999;text-align:center;flex-shrink:0}
+.nm{flex:1;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Adjusted padding and min-width to accommodate decimal handicaps cleanly */
+.hc{font-size:10px;color:#fff;font-weight:700;background:#2d5016;padding:2px 6px;min-width:24px;text-align:center;border-radius:4px;flex-shrink:0}
+.sh{font-size:9px;color:#c78a00;font-weight:800;flex-shrink:0}
+.tk{width:14px;font-size:13px;font-weight:900;color:#2d5016;text-align:center;flex-shrink:0}
+.sb{padding:4px;background:#fff8e5;font-size:10px;color:#8b6914;text-align:center;font-weight:600;border-top:1px solid #eee}
+.winner-box{position:absolute;z-index:2;text-align:center;padding:14px 18px;background:#2d5016;border-radius:10px;color:#fff;box-shadow:0 4px 12px rgba(45,80,22,0.3)}
+.winner-box .tr{font-size:26px;margin-bottom:4px}.winner-box .cn{font-family:'DM Serif Display',Georgia,serif;font-size:16px;white-space:nowrap}.winner-box .ch{font-size:10px;opacity:.8;margin-top:3px;text-transform:uppercase;letter-spacing:1px}
+
+@media (min-width: 600px) {
+  .lg { text-align: right; }
+}
+</style>
+</head>
+<body>
+
+<div class="top-wrapper">
+  <div class="header-left">
+    <div class="hdr">
+      <div class="title">Match Play 2026</div>
+      <div class="sub">21 players · single elimination</div>
+    </div>
+    <div class="tb">
+      <button class="btn" onclick="clearAll()">Clear all</button>
+      <span class="hn">Tap a player to advance them</span>
