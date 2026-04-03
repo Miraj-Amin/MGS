@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MGS — Score Entry</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{overflow-x:hidden}
+body{font-family:'DM Sans',system-ui,sans-serif;background:#f7f5f0;color:#2c3319;-webkit-font-smoothing:antialiased;padding:8px;width:100%;overflow-x:hidden}
+.section-label{font-size:10px;font-weight:700;color:#8b9474;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px}
+.event-select{display:flex;gap:4px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.event-select::-webkit-scrollbar{display:none}
+.ev-btn{padding:8px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid #e8e4dc;font-family:inherit;background:#fff;color:#8b9474;white-space:nowrap;flex-shrink:0;transition:all .2s}
+.ev-btn.active{background:#2d5016;color:#fff;border-color:#2d5016}
+.info-bar{display:flex;gap:6px;margin-bottom:10px}
+.info-box{flex:1;text-align:center;padding:8px 4px;background:#fff;border-radius:8px;border:1px solid #e8e4dc}
+.info-val{font-family:'DM Serif Display',Georgia,serif;font-size:18px;color:#2d5016}
+.info-lbl{font-size:9px;color:#8b9474;font-weight:600}
+.search{width:100%;padding:10px;border-radius:8px;border:1px solid #e8e4dc;font-family:inherit;font-size:13px;margin-bottom:8px;background:#fff;outline:none}
+.search:focus{border-color:#2d5016}
+.player-count{font-size:10px;color:#8b9474;margin-bottom:6px}
+.score-row{display:flex;align-items:center;padding:10px;background:#fff;border-radius:8px;margin-bottom:5px;border:1px solid #e8e4dc;gap:8px;animation:fadeUp .2s ease both}
+.score-row.has-score{border-color:#2d501640}
+.score-left{flex:1;min-width:0}
+.score-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.score-detail{font-size:10px;color:#8b9474}
+.score-hcp{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;background:#2d501615;color:#2d5016}
+.score-input{width:60px;padding:8px 4px;border-radius:6px;border:1.5px solid #e8e4dc;font-family:'DM Serif Display',Georgia,serif;font-size:20px;color:#2d5016;text-align:center;background:#fafaf7;outline:none;flex-shrink:0}
+.score-input:focus{border-color:#2d5016;background:#fff}
+.score-input.filled{border-color:#2d5016;background:#2d501610}
+
+/* Merged UI Buttons */
+.submit-bar{display:flex;gap:8px;margin-bottom:8px}
+.csv-btn{flex:0 0 auto;padding:12px 16px;border-radius:10px;border:1.5px solid #2d5016;background:#fff;color:#2d5016;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;text-align:center;display:flex;align-items:center;justify-content:center;opacity:0.5;pointer-events:none;}
+.csv-btn.active{opacity:1;pointer-events:auto;}
+.csv-btn.active:hover{background:#f0f4ea;}
+.submit-btn{flex:1;padding:12px;border-radius:10px;border:none;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;background:#2d5016;color:#fff;transition:all .2s}
+.submit-btn:hover{background:#3a6a1e}
+.submit-btn:disabled{background:#c5cdb8;cursor:not-allowed}
+.submit-btn.success{background:#16a34a}
+.submit-btn.error{background:#dc2626}
+
+.toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#2c3319;color:#fff;padding:10px 20px;border-radius:10px;font-size:12px;font-weight:600;z-index:100;animation:toastIn .3s ease;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.status{padding:10px;border-radius:8px;margin-bottom:8px;font-size:12px;display:none}
+.status.show{display:block}
+.status.ok{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+.status.err{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.loading{text-align:center;padding:30px;color:#8b9474;font-size:13px}
+
+/* --- MAPPING MODAL STYLES --- */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:1000;display:none;align-items:center;justify-content:center;padding:15px;animation:fadeIn .2s ease;}
+.modal-content{background:#fff;width:100%;max-width:500px;border-radius:12px;display:flex;flex-direction:column;max-height:90vh;box-shadow:0 10px 25px rgba(0,0,0,0.15);}
+.modal-header{padding:15px 20px;border-bottom:1px solid #e8e4dc;font-weight:700;color:#2d5016;font-size:16px;}
+.modal-body{padding:20px;overflow-y:auto;flex:1;}
+.mapping-row{display:flex;flex-direction:column;gap:6px;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid #f0ede6;}
+.mapping-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+.map-csv-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.map-csv-name{font-size:14px;font-weight:600;color:#2c3319;}
+.map-csv-score{font-family:'DM Serif Display',serif;font-size:16px;color:#2d5016;}
+.map-select{padding:10px;border-radius:6px;border:1px solid #e8e4dc;width:100%;font-size:13px;outline:none;background:#fafaf7;font-family:inherit;}
+.map-select:focus{border-color:#2d5016;background:#fff;}
+.modal-footer{padding:15px 20px;border-top:1px solid #e8e4dc;display:flex;gap:10px;justify-content:flex-end;}
+.btn-cancel{padding:10px 16px;border-radius:8px;border:1px solid #e8e4dc;background:#fff;cursor:pointer;font-weight:600;font-family:inherit;color:#8b9474;}
+.btn-confirm{padding:10px 16px;border-radius:8px;border:none;background:#2d5016;color:#fff;cursor:pointer;font-weight:600;font-family:inherit;}
+.badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-left:6px;vertical-align:middle;}
+.badge.ok{background:#dcfce7;color:#166534;}
+.badge.err{background:#fee2e2;color:#991b1b;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+</style>
+</head>
+<body>
+<div class="section-label">Score entry</div>
+<div class="event-select" id="event-btns"></div>
+<div class="status" id="status"></div>
+<div class="info-bar" id="info-bar"></div>
+
+<div class="submit-bar">
+  <label class="csv-btn" id="csv-btn-label">
+    Import CSV
+    <input type="file" id="csvFileInput" accept=".csv" style="display:none;" onchange="handleCSVUpload(event)">
+  </label>
+  <button class="submit-btn" id="submit-btn" onclick="submitScores()" disabled>Select an event first</button>
+</div>
+
+<input type="text" class="search" placeholder="Search player..." oninput="filterPlayers()">
+<div class="player-count" id="player-count"></div>
+<div id="app"><div class="loading">Loading members...</div></div>
+<div id="toast-container"></div>
+
+<!-- MAPPING MODAL -->
+<div id="mapping-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">Map CSV Players</div>
+    <div class="modal-body" id="mapping-list"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeMappingModal()">Cancel</button>
+      <button class="btn-confirm" onclick="applyMappings()">Confirm Mappings</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby63n3XbRbLpcS1Y6HAn9BkpWH6MfFoxRzXYiZ17tA9h7zosABou749g9cXlcyYdofUQg/exec";
+const SHEET_ID = "18mtEHX_sWqI_9eLZLHmLuJgqLbzH_GlbFDOy1dYJnX4";
+
+const EVENTS = [
+  {key:'Pyrford', label:'Pyrford'},
+  {key:'Dyke', label:'Dyke'},
+  {key:'Hever', label:'Hever'},
+  {key:'Ingrebourne', label:'Ingrebourne'},
+  {key:'Shire', label:'Shire'}
+];
+
+let eventData=[], activeEvent=null, submitting=false;
+let parsedCSVData = []; 
+
+async function fetchSheet(tab) {
+  try {
+    const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(tab)}`);
+    const text = await res.text();
+    const m = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*?)\);?\s*$/);
+    if (!m) return null;
+    const json = JSON.parse(m[1]);
+    const cols = json.table.cols.map(c => c.label.trim().toLowerCase().replace(/\s+/g,'_'));
+    return json.table.rows.map(row => {
+      const obj = {};
+      row.c.forEach((cell, i) => {
+        if (!cols[i]) return;
+        obj[cols[i]] = (cell && cell.v !== null && cell.v !== undefined) ? String(cell.v) : (cell && cell.f) ? cell.f : '';
+      });
+      return obj;
+    });
+  } catch(e) { return null; }
+}
+
+function gv(o,...k){for(const x of k) if(o[x]!==undefined&&o[x]!=='') return o[x]; return '';}
+function n(v){const x=parseFloat(v);return isNaN(x)?0:x;}
+
+function renderEventButtons() {
+  document.getElementById('event-btns').innerHTML = EVENTS.map(e =>
+    `<button class="ev-btn ${activeEvent===e.key?'active':''}" onclick="selectEvent('${e.key}')">${e.label}</button>`
+  ).join('');
+}
+
+async function selectEvent(key) {
+  activeEvent = key;
+  renderEventButtons();
+  document.getElementById('csv-btn-label').classList.add('active');
+  document.getElementById('app').innerHTML='<div class="loading">Loading players...</div>';
+  
+  eventData = await fetchSheet(key) || [];
+  renderPlayers();
+  updateSubmitButton();
+}
+
+function renderPlayers() {
+  if (!activeEvent || !eventData.length) {
+    document.getElementById('app').innerHTML='<div class="loading">Select an event above</div>';
+    document.getElementById('info-bar').innerHTML='';
+    return;
+  }
+  const existing = eventData.filter(d => n(gv(d,'score')) > 0).length;
+  document.getElementById('info-bar').innerHTML = `
+    <div class="info-box"><div class="info-val">${eventData.length}</div><div class="info-lbl">Players</div></div>
+    <div class="info-box"><div class="info-val">${existing}</div><div class="info-lbl">Scored</div></div>
+    <div class="info-box"><div class="info-val" id="entered-count">0</div><div class="info-lbl">Changed</div></div>`;
+  filterPlayers();
+}
+
+function filterPlayers() {
+  const q = document.querySelector('.search').value.toLowerCase().trim();
+  let filtered = eventData;
+  if (q) filtered = filtered.filter(d => gv(d,'name').toLowerCase().includes(q));
+  document.getElementById('player-count').textContent=`${filtered.length} players`;
+  
+  document.getElementById('app').innerHTML = filtered.map((d,i) => {
+    const nm = gv(d,'name');
+    const hcp = n(gv(d,'current_handicap'));
+    const existing = n(gv(d,'score'));
+    const has = existing > 0;
+    return `<div class="score-row ${has?'has-score':''}" style="animation-delay:${Math.min(i*.015,.3)}s">
+      <div class="score-left"><div class="score-name">${nm}</div><div class="score-detail"><span class="score-hcp">HCP ${hcp}</span></div></div>
+      <input type="number" class="score-input ${has?'filled':''}" data-name="${nm}" value="${has?existing:''}" placeholder="—" min="0" max="99" inputmode="numeric" onfocus="this.select()" oninput="onScoreInput(this)">
+    </div>`;
+  }).join('');
+}
+
+function onScoreInput(el) {
+  el.classList.toggle('filled', el.value!=='');
+  updateEnteredCount();
+  updateSubmitButton();
+}
+
+function updateEnteredCount() {
+  let c=0;
+  document.querySelectorAll('.score-input').forEach(inp=>{if(inp.value) c++;});
+  const el=document.getElementById('entered-count');
+  if(el) el.textContent=c;
+}
+
+function updateSubmitButton() {
+  const btn=document.getElementById('submit-btn');
+  if(!activeEvent){btn.disabled=true;btn.textContent='Select an event first';return;}
+  let c=0;
+  document.querySelectorAll('.score-input').forEach(inp=>{if(inp.value) c++;});
+  btn.disabled=c===0||submitting;
+  btn.textContent=c>0?`Submit ${c} score${c>1?'s':''} for ${activeEvent}`:'Enter scores above';
+}
+
+/* --- CSV & SMART MAPPING LOGIC --- */
+
+function handleCSVUpload(e) {
+  if(!activeEvent) { showToast("Select an event first!"); return; }
+  const file = e.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    parseCSVAndShowMapping(event.target.result);
+  };
+  reader.readAsText(file);
+  e.target.value = ''; 
+}
+
+function parseCSVAndShowMapping(csvText) {
+  const lines = csvText.split(/\r?\n/);
+  parsedCSVData = []; 
+  let lastPlayerName = '';
+
+  for (let i = 0; i < lines.length; i++) {
+    const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/(^"|"$)/g, '').trim());
+    if (row.length < 2) continue;
+
+    if (row[1] === 'Stableford') {
+      const totalPoints = row[23]; 
+      if (lastPlayerName && totalPoints !== undefined) {
+        let cleanName = lastPlayerName.replace(/\(G\)\s*/i, '').trim();
+        parsedCSVData.push({ csvName: cleanName, score: parseInt(totalPoints) });
+      }
+    } else {
+      if (row[0] && row[0] !== 'Name' && row[0] !== 'Par' && row[0] !== 'S.I.' && row[0] !== 'Players') {
+        lastPlayerName = row[0];
+      }
+    }
+  }
+
+  if (parsedCSVData.length === 0) {
+    showToast("No Stableford scores found in CSV.");
+    return;
+  }
+  
+  openMappingModal();
+}
+
+function openMappingModal() {
+  const listEl = document.getElementById('mapping-list');
+  let html = '';
+
+  let sheetMembers = eventData.map(d => gv(d, 'name')).filter(Boolean);
+  
+  parsedCSVData.forEach((item, idx) => {
+    const rawSearchName = item.csvName.toLowerCase();
+    
+    // NEW SMART MATCHING ALGORITHM: Tokenize into exact words (strips punctuation)
+    const searchTokens = rawSearchName.replace(/[^a-z0-9]+/g, ' ').split(/\s+/).filter(Boolean);
+    
+    let matchedName = null;
+
+    // 1. Try Exact Match First
+    for (let name of sheetMembers) {
+      if (name.toLowerCase() === rawSearchName) {
+        matchedName = name;
+        break;
+      }
+    }
+
+    // 2. Try Smart "First & Last Word" Match if no exact match
+    if (!matchedName && searchTokens.length >= 2) {
+      const searchFirst = searchTokens[0];
+      const searchLast = searchTokens[searchTokens.length - 1];
+
+      for (let name of sheetMembers) {
+        const dbTokens = name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(/\s+/).filter(Boolean);
+        if (dbTokens.length >= 2) {
+          const dbFirst = dbTokens[0];
+          const dbLast = dbTokens[dbTokens.length - 1];
+          
+          if (searchFirst === dbFirst && searchLast === dbLast) {
+            matchedName = name;
+            break;
+          }
+        }
+      }
+    }
+
+    const badgeHtml = matchedName 
+      ? `<span class="badge ok">Mapped</span>` 
+      : `<span class="badge err">Unmapped</span>`;
+
+    let optionsHtml = `<option value="">— Ignore (Guest/Unmatched) —</option>`;
+    sheetMembers.forEach(m => {
+      const isSelected = (matchedName === m) ? 'selected' : '';
+      optionsHtml += `<option value="${m}" ${isSelected}>${m}</option>`;
+    });
+
+    html += `
+      <div class="mapping-row">
+        <div class="map-csv-info">
+          <div class="map-csv-name">${item.csvName} ${badgeHtml}</div>
+          <div class="map-csv-score">${item.score} pts</div>
+        </div>
+        <select class="map-select" id="map-select-${idx}" onchange="updateBadge(this)">
+          ${optionsHtml}
+        </select>
+      </div>
+    `;
+  });
+
+  listEl.innerHTML = html;
+  document.getElementById('mapping-modal').style.display = 'flex';
+}
+
+function updateBadge(selectEl) {
+  const row = selectEl.closest('.mapping-row');
+  const nameDiv = row.querySelector('.map-csv-name');
+  let baseName = nameDiv.innerHTML.split('<span')[0].trim();
+  if (selectEl.value === "") {
+    nameDiv.innerHTML = `${baseName} <span class="badge err">Unmapped</span>`;
+  } else {
+    nameDiv.innerHTML = `${baseName} <span class="badge ok">Mapped</span>`;
+  }
+}
+
+function closeMappingModal() {
+  document.getElementById('mapping-modal').style.display = 'none';
+}
+
+function applyMappings() {
+  let mappedCount = 0;
+  const inputs = document.querySelectorAll('.score-input');
+  
+  inputs.forEach(inp => {
+    inp.value = '';
+    inp.classList.remove('filled');
+  });
+
+  parsedCSVData.forEach((item, idx) => {
+    const selectEl = document.getElementById(`map-select-${idx}`);
+    if (selectEl && selectEl.value !== "") {
+      const targetName = selectEl.value;
+      const targetInput = document.querySelector(`.score-input[data-name="${targetName}"]`);
+      if (targetInput) {
+        targetInput.value = item.score;
+        targetInput.classList.add('filled');
+        mappedCount++;
+      }
+    }
+  });
+
+  closeMappingModal();
+  updateEnteredCount();
+  updateSubmitButton();
+  showToast(`Auto-filled ${mappedCount} scores to the grid.`);
+}
+
+/* --- BULK GOOGLE SHEET SUBMIT LOGIC --- */
+
+function showStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status show ' + type;
+  if (type === 'ok') setTimeout(()=> el.className='status', 6000);
+}
+
+function showToast(msg, dur) {
+  document.getElementById('toast-container').innerHTML=`<div class="toast">${msg}</div>`;
+  setTimeout(()=>document.getElementById('toast-container').innerHTML='', dur||3000);
+}
+
+async function submitScores() {
+  if (!activeEvent || submitting) return;
+
+  const inputs = document.querySelectorAll('.score-input');
+  const scores = [];
+  inputs.forEach(inp => {
+    if (inp.value && inp.dataset.name) {
+      scores.push({name: inp.dataset.name, score: parseInt(inp.value)});
+    }
+  });
+  
+  if (!scores.length) return;
+
+  submitting = true;
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Writing to Google Sheets...';
+
+  const payload = JSON.stringify({
+    event: activeEvent,
+    scores: scores
+  });
+
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: payload
+  })
+  .then(() => {
+    btn.textContent = `✓ ${scores.length} scores submitted!`;
+    btn.classList.add('success');
+    showStatus(`✓ ${scores.length} scores saved to ${activeEvent}. Check your Google Sheet.`, 'ok');
+    showToast(`✓ Scores saved to ${activeEvent}`);
+
+    setTimeout(async () => {
+      eventData = await fetchSheet(activeEvent) || [];
+      btn.classList.remove('success');
+      submitting = false;
+      renderPlayers();
+      updateSubmitButton();
+    }, 4000);
+  })
+  .catch(err => {
+    console.error(err);
+    btn.textContent = `Upload Failed`;
+    btn.classList.add('error');
+    showStatus(`Network error saving scores.`, 'err');
+    
+    setTimeout(() => {
+      btn.classList.remove('error');
+      submitting = false;
+      updateSubmitButton();
+    }, 4000);
+  });
+}
+
+function init() {
+  renderEventButtons();
+  document.getElementById('app').innerHTML='<div class="loading">Select an event above</div>';
+}
+init();
+</script>
+</body>
+</html>

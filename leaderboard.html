@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MGS — Leaderboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{overflow-x:hidden}
+body{font-family:'DM Sans',system-ui,sans-serif;background:#f7f5f0;color:#2c3319;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;padding:8px;width:100%;overflow-x:hidden}
+
+.section-label{font-size:10px;font-weight:700;color:#8b9474;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:12px;background:#fff;border-radius:8px;padding:3px;border:1px solid #e8e4dc}
+.tab{flex:1;padding:8px 4px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:none;font-family:inherit;text-align:center;background:transparent;color:#8b9474;transition:all .2s}
+.tab.active{background:#2d5016;color:#fff}
+
+/* Podium */
+.podium{display:flex;justify-content:center;align-items:flex-end;gap:6px;margin-bottom:16px;padding:0 4px}
+.podium-item{display:flex;flex-direction:column;align-items:center;animation:fadeUp .4s ease both}
+.podium-item:nth-child(1){animation-delay:.08s}
+.podium-item:nth-child(2){animation-delay:0s}
+.podium-item:nth-child(3){animation-delay:.12s}
+.podium-avatar{width:40px;height:40px;border-radius:50%;background:#e8e4dc;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#2d5016;margin-bottom:4px}
+.podium-avatar.gold{border:2.5px solid #d4a300}
+.podium-avatar.silver{border:2.5px solid #8a8a8a}
+.podium-avatar.bronze{border:2.5px solid #a0522d}
+.podium-name{font-size:11px;font-weight:600;text-align:center;max-width:75px;line-height:1.2;margin-bottom:4px}
+.podium-bar{border-radius:6px 6px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.podium-bar .pts{font-family:'DM Serif Display',Georgia,serif;font-size:22px;color:#2d5016}
+.podium-bar .pts-label{font-size:9px;color:#8b9474}
+
+/* Result rows */
+.result-row{display:flex;align-items:center;padding:10px;background:#fff;border-radius:8px;margin-bottom:6px;border:1px solid #e8e4dc;animation:slideIn .25s ease both;gap:8px}
+.pos{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',Georgia,serif;font-size:12px;font-weight:600;flex-shrink:0;border:1.5px solid #c5cdb8;color:#8b9474}
+.result-info{flex:1;min-width:0}
+.result-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result-sub{font-size:10px;color:#8b9474}
+.result-pts{font-family:'DM Serif Display',Georgia,serif;font-size:18px;color:#2d5016;flex-shrink:0}
+.result-detail{font-size:9px;color:#8b9474;text-align:right;flex-shrink:0;margin-left:2px}
+
+/* OOM Table */
+.oom-card{background:#fff;border-radius:10px;padding:10px;border:1px solid #e8e4dc;animation:fadeUp .3s ease}
+.oom-header{display:flex;padding:6px 0;border-bottom:2px solid #e8e4dc;margin-bottom:2px;gap:4px}
+.oom-header span{font-size:9px;font-weight:700;color:#8b9474;text-transform:uppercase;letter-spacing:.3px}
+.oom-row{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0ede6;gap:4px;animation:slideIn .2s ease both}
+.oom-row:last-child{border-bottom:none}
+.oom-pos{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',Georgia,serif;font-size:11px;font-weight:600;flex-shrink:0}
+.oom-pos.top1{background:#d4a300;color:#fff}
+.oom-pos.top2{background:#8a8a8a;color:#fff}
+.oom-pos.top3{background:#a0522d;color:#fff}
+.oom-pos.other{border:1.5px solid #c5cdb8;color:#8b9474}
+.oom-name{flex:1;min-width:0;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-left:4px}
+.oom-stat{text-align:center;font-size:11px;color:#8b9474}
+.oom-pts{font-family:'DM Serif Display',Georgia,serif;font-size:15px;color:#2d5016;text-align:right;flex-shrink:0}
+.wins-badge{background:#fffbeb;color:#d97706;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600}
+
+/* Per-event tab */
+.event-selector{display:flex;gap:4px;margin-bottom:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.event-selector::-webkit-scrollbar{display:none}
+.ev-btn{padding:5px 10px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid #e8e4dc;font-family:inherit;background:#fff;color:#8b9474;white-space:nowrap;flex-shrink:0}
+.ev-btn.active{background:#2d5016;color:#fff;border-color:#2d5016}
+
+.no-data{text-align:center;color:#8b9474;padding:20px;font-size:12px}
+.loading{text-align:center;padding:30px;color:#8b9474;font-size:13px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+</style>
+</head>
+<body>
+<div class="section-label">Leaderboard</div>
+<div class="tabs">
+<button class="tab active" onclick="switchTab('oom')">Order of Merit</button>
+<button class="tab" onclick="switchTab('events')">By Event</button>
+</div>
+<div id="oom-view"><div class="loading">Loading...</div></div>
+<div id="events-view" style="display:none"></div>
+
+<script>
+const SHEET_ID = "18mtEHX_sWqI_9eLZLHmLuJgqLbzH_GlbFDOy1dYJnX4";
+const EVENTS = [
+  {key:'pyrford',label:'Pyrford'},
+  {key:'dyke',label:'Dyke'},
+  {key:'hever',label:'Hever'},
+  {key:'ingrebourne',label:'Ingrebourne'},
+  {key:'shire',label:'Shire'}
+];
+
+async function fetchSheet(tab) {
+  try {
+    const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(tab)}`);
+    const text = await res.text();
+    const m = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*?)\);?\s*$/);
+    if (!m) return null;
+    const json = JSON.parse(m[1]);
+    const cols = json.table.cols.map(c => c.label.trim().toLowerCase().replace(/\s+/g,'_'));
+    return json.table.rows.map(row => {
+      const obj = {};
+      row.c.forEach((cell, i) => {
+        if (!cols[i]) return;
+        obj[cols[i]] = (cell && cell.v !== null && cell.v !== undefined) ? String(cell.v) : (cell && cell.f) ? cell.f : '';
+      });
+      return obj;
+    });
+  } catch(e) { return null; }
+}
+
+function gv(o,...k){for(const x of k) if(o[x]!==undefined&&o[x]!=='') return o[x]; return '';}
+function n(v){const x=parseFloat(v);return isNaN(x)?0:x;}
+function initials(name){return name.split(' ').map(w=>w[0]).join('');}
+
+let allData = [];
+let activeEvent = 'pyrford';
+
+function switchTab(view) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', (view==='oom'&&i===0)||(view==='events'&&i===1));
+  });
+  document.getElementById('oom-view').style.display = view==='oom'?'block':'none';
+  document.getElementById('events-view').style.display = view==='events'?'block':'none';
+}
+
+function renderOOM(data) {
+  // Filter to players with OOM points > 0, sort descending
+  const ranked = data.filter(d => n(gv(d,'oom-points','oom_points')) > 0)
+    .sort((a,b) => n(gv(b,'oom-points','oom_points')) - n(gv(a,'oom-points','oom_points')));
+
+  if (!ranked.length) {
+    document.getElementById('oom-view').innerHTML = '<div class="no-data">No OOM data yet</div>';
+    return;
+  }
+
+  // Podium for top 3
+  let podiumHTML = '';
+  if (ranked.length >= 3) {
+    const order = [1, 0, 2]; // silver, gold, bronze visual order
+    const cfg = [
+      {h:80,w:70,color:'#8a8a8a',cls:'silver'},
+      {h:100,w:80,color:'#d4a300',cls:'gold'},
+      {h:68,w:65,color:'#a0522d',cls:'bronze'}
+    ];
+    podiumHTML = '<div class="podium">' + order.map((idx,i) => {
+      const p = ranked[idx], c = cfg[i];
+      const nm = gv(p,'name');
+      const pts = n(gv(p,'oom-points','oom_points'));
+      return `<div class="podium-item">
+        <div class="podium-avatar ${c.cls}">${initials(nm)}</div>
+        <div class="podium-name">${nm.split(' ')[0]}</div>
+        <div class="podium-bar" style="width:${c.w}px;height:${c.h}px;background:${c.color}15;border:1.5px solid ${c.color}44">
+          <div class="pts">${pts}</div>
+          <div class="pts-label">pts</div>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+  }
+
+  // Full table
+  const tableHTML = `<div class="oom-card">
+    <div class="section-label" style="margin-bottom:6px">Season standings</div>
+    <div class="oom-header">
+      <span style="width:28px">#</span>
+      <span style="flex:1;margin-left:4px">Player</span>
+      <span style="width:30px;text-align:center">Rds</span>
+      <span style="width:35px;text-align:center">Wins</span>
+      <span style="width:30px;text-align:center">Avg</span>
+      <span style="width:40px;text-align:right">Pts</span>
+    </div>
+    ${ranked.map((p, i) => {
+      const nm = gv(p,'name');
+      const pts = n(gv(p,'oom-points','oom_points'));
+      const rds = n(gv(p,'rounds'));
+      const avg = n(gv(p,'avg_points'));
+      const wins = n(gv(p,'wins'));
+      const posCls = i===0?'top1':i===1?'top2':i===2?'top3':'other';
+      return `<div class="oom-row" style="animation-delay:${Math.min(i*.02,.4)}s">
+        <div class="oom-pos ${posCls}">${i+1}</div>
+        <div class="oom-name">${nm}</div>
+        <div class="oom-stat" style="width:30px">${rds}</div>
+        <div style="width:35px;text-align:center">${wins>0?'<span class="wins-badge">'+wins+'</span>':''}</div>
+        <div class="oom-stat" style="width:30px">${avg||'—'}</div>
+        <div class="oom-pts" style="width:40px">${pts}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+
+  document.getElementById('oom-view').innerHTML = podiumHTML + tableHTML;
+}
+
+function renderEventView(data) {
+  // Event selector buttons
+  const btns = '<div class="event-selector">' + EVENTS.map(e =>
+    `<button class="ev-btn ${activeEvent===e.key?'active':''}" onclick="selectEvent('${e.key}')">${e.label}</button>`
+  ).join('') + '</div>';
+
+  // Get scores for active event, filter > 0, sort descending
+  const ranked = data.filter(d => n(gv(d, activeEvent)) > 0)
+    .sort((a,b) => n(gv(b, activeEvent)) - n(gv(a, activeEvent)));
+
+  let contentHTML = '';
+  if (!ranked.length) {
+    contentHTML = '<div class="no-data">No scores yet for this event</div>';
+  } else {
+    // Podium
+    if (ranked.length >= 3) {
+      const order = [1, 0, 2];
+      const cfg = [
+        {h:70,w:65,color:'#8a8a8a',cls:'silver'},
+        {h:90,w:75,color:'#d4a300',cls:'gold'},
+        {h:60,w:60,color:'#a0522d',cls:'bronze'}
+      ];
+      contentHTML += '<div class="podium">' + order.map((idx,i) => {
+        const p = ranked[idx], c = cfg[i];
+        const nm = gv(p,'name');
+        const sc = n(gv(p, activeEvent));
+        return `<div class="podium-item">
+          <div class="podium-avatar ${c.cls}">${initials(nm)}</div>
+          <div class="podium-name">${nm.split(' ')[0]}</div>
+          <div class="podium-bar" style="width:${c.w}px;height:${c.h}px;background:${c.color}15;border:1.5px solid ${c.color}44">
+            <div class="pts">${sc}</div>
+            <div class="pts-label">pts</div>
+          </div>
+        </div>`;
+      }).join('') + '</div>';
+    }
+
+    // Rest of results
+    contentHTML += ranked.slice(3).map((p, i) => {
+      const nm = gv(p,'name');
+      const sc = n(gv(p, activeEvent));
+      const hcp = n(gv(p,'current'));
+      return `<div class="result-row" style="animation-delay:${Math.min(i*.02,.3)}s">
+        <div class="pos">${i+4}</div>
+        <div class="result-info">
+          <div class="result-name">${nm}</div>
+          <div class="result-sub">HCP ${hcp}</div>
+        </div>
+        <div class="result-pts">${sc}</div>
+        <div class="result-detail">pts</div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('events-view').innerHTML = btns + contentHTML;
+}
+
+function selectEvent(key) {
+  activeEvent = key;
+  renderEventView(allData);
+}
+
+async function init() {
+  allData = await fetchSheet('Handicaps Calc') || [];
+  renderOOM(allData);
+  renderEventView(allData);
+}
+init();
+</script>
+</body>
+</html>

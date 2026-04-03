@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="UTF-8">
+<!-- Force browser to NOT cache the old version -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MGS — Handicaps</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{overflow-x:hidden}
+body{font-family:'DM Sans',system-ui,sans-serif;background:#f7f5f0;color:#2c3319;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;padding:8px;width:100%;overflow-x:hidden}
+.section-label{font-size:10px;font-weight:700;color:#8b9474;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.summary-box{text-align:center;padding:8px 4px;background:#fff;border-radius:8px;border:1px solid #e8e4dc}
+.summary-val{font-family:'DM Serif Display',Georgia,serif;font-size:20px;color:#2d5016}
+.summary-lbl{font-size:9px;color:#8b9474;font-weight:600;margin-top:1px}
+.search{width:100%;padding:10px;border-radius:8px;border:1px solid #e8e4dc;font-family:inherit;font-size:13px;margin-bottom:6px;background:#fff;outline:none}
+.search:focus{border-color:#2d5016}
+.filters{display:flex;gap:4px;margin-bottom:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filter-btn{padding:5px 8px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid #e8e4dc;font-family:inherit;background:#fff;color:#8b9474;white-space:nowrap;flex-shrink:0}
+.filter-btn.active{background:#2d5016;color:#fff;border-color:#2d5016}
+.member-count{font-size:10px;color:#8b9474;margin-bottom:6px}
+.card{background:#fff;border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #e8e4dc;animation:fadeUp .25s ease both}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px}
+.player-left{flex:1;min-width:0}
+.player-id{font-size:9px;font-weight:600;color:#8b9474;letter-spacing:.4px}
+.player-name{font-size:14px;font-weight:600;line-height:1.2}
+.player-cat{display:inline-block;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;margin-top:3px}
+.cat-1{background:#d4a30020;color:#8b6914}
+.cat-2{background:#2d501620;color:#2d5016}
+.cat-3{background:#1a6b8a20;color:#1a6b8a}
+.cat-4{background:#8b451320;color:#8b4513}
+.hcp-block{text-align:right;flex-shrink:0}
+.hcp-label{font-size:8px;color:#8b9474;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.hcp-current{font-family:'DM Serif Display',Georgia,serif;font-size:36px;color:#2d5016;line-height:1}
+.hcp-details{font-size:10px;color:#8b9474;margin-top:2px;line-height:1.4}
+.hcp-details strong{color:#2c3319}
+.hcp-change{font-size:10px;font-weight:600;margin-top:1px}
+.improved{color:#16a34a}
+.worse{color:#dc2626}
+.same{color:#8b9474}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px}
+.stat{padding:7px;background:#fafaf7;border-radius:6px;border:1px solid #f0ede6;text-align:center}
+.stat-label{font-size:8px;text-transform:uppercase;letter-spacing:.3px;color:#8b9474;font-weight:600;margin-bottom:1px}
+.stat-value{font-family:'DM Serif Display',Georgia,serif;font-size:18px;color:#2d5016}
+.scores-label{font-size:9px;font-weight:700;color:#8b9474;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px}
+.scores-strip{display:flex;gap:4px}
+.score{flex:1;text-align:center;padding:5px 2px;background:#fafaf7;border-radius:5px;border:1px solid #f0ede6;min-width:0}
+.score-venue{font-size:8px;color:#8b9474;font-weight:700;letter-spacing:.2px}
+.score-val{font-family:'DM Serif Display',Georgia,serif;font-size:16px;color:#2d5016;margin-top:1px}
+.score-val.zero{color:#d4d0c8;font-size:14px}
+.no-results{text-align:center;color:#8b9474;padding:20px;font-size:13px}
+.loading{text-align:center;padding:30px;color:#8b9474;font-size:13px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="section-label">Handicap tracker</div>
+<div class="summary" id="summary"></div>
+<input type="text" class="search" placeholder="Search name or member #..." oninput="applyFilters()">
+<div class="filters" id="filters"></div>
+<div class="member-count" id="count"></div>
+<div id="app"><div class="loading">Loading...</div></div>
+
+<script>
+const SHEET_ID = "18mtEHX_sWqI_9eLZLHmLuJgqLbzH_GlbFDOy1dYJnX4";
+const EVENTS = ['Pyrford', 'Dyke', 'Hever', 'Ingrebourne', 'Shire'];
+const VS = {Pyrford:'PYR', Dyke:'DYK', Hever:'HEV', Ingrebourne:'ING', Shire:'SHR'};
+
+let allData = [];
+let eventScores = {}; 
+let activeFilter = 'all';
+
+function cleanStr(str) { return str ? String(str).toLowerCase().trim() : ''; }
+function gv(o,...k){for(const x of k) if(o[x]!==undefined&&o[x]!=='') return o[x]; return '';}
+function n(v){const x=parseFloat(v);return isNaN(x)?0:x;}
+
+// 1. Fetch Main Handicap Data
+async function fetchMainSheet() {
+    try {
+        const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&headers=1&sheet=Handicaps%20Calc`);
+        const text = await res.text();
+        const m = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*?)\);?\s*$/);
+        if (!m) return [];
+        const json = JSON.parse(m[1]);
+        const cols = json.table.cols.map(c => c && c.label ? c.label.trim().toLowerCase().replace(/[^a-z0-9]/g, '') : '');
+        return json.table.rows.map(row => {
+            const obj = {};
+            row.c.forEach((cell, i) => {
+                if (!cols[i]) return;
+                obj[cols[i]] = (cell && cell.v !== null && cell.v !== undefined) ? String(cell.v) : '';
+            });
+            return obj;
+        });
+    } catch(e) { return []; }
+}
+
+// 2. Fetch Event Tabs to get exact Column D (Stableford Scores)
+async function fetchAllEventScores() {
+    for (const event of EVENTS) {
+        try {
+            const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${event}`);
+            const text = await res.text();
+            const m = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*?)\);?\s*$/);
+            if (!m) continue;
+            const json = JSON.parse(m[1]);
+            
+            json.table.rows.forEach(row => {
+                if (!row || !row.c) return;
+                // Column A (index 0) = Name | Column D (index 3) = Stableford Score
+                const nameCell = row.c[0]; 
+                const scoreCell = row.c[3]; 
+                
+                const name = nameCell && nameCell.v ? cleanStr(nameCell.v) : null;
+                const score = scoreCell && scoreCell.v !== null && scoreCell.v !== undefined ? String(scoreCell.v) : null;
+                
+                if (name && score !== null && score !== '') {
+                    if (!eventScores[name]) eventScores[name] = {};
+                    eventScores[name][event] = score;
+                }
+            });
+        } catch(e) { console.log("Skipping event fetch for: " + event); }
+    }
+}
+
+// Helper to reliably match names (e.g. "Aaron D Patel" with "Aaron Patel")
+function getPlayerScore(playerName, eventName) {
+    const cleanName = cleanStr(playerName);
+    if (eventScores[cleanName] && eventScores[cleanName][eventName] !== undefined) {
+        return eventScores[cleanName][eventName];
+    }
+    for (const sheetName in eventScores) {
+        if ((cleanName.includes(sheetName) || sheetName.includes(cleanName)) && sheetName.length > 4) {
+            if (eventScores[sheetName][eventName] !== undefined) {
+                return eventScores[sheetName][eventName];
+            }
+        }
+    }
+    return '—';
+}
+
+function renderSummary(d) {
+    const t=d.length;
+    const af=t?(d.reduce((s,x)=>s+n(gv(x,'current','full')),0)/t).toFixed(1):'—';
+    const ap=t?(d.reduce((s,x)=>s+n(gv(x,'currentplaying','playing')),0)/t).toFixed(1):'—';
+    const r=d.reduce((s,x)=>s+n(gv(x,'rounds')),0);
+    document.getElementById('summary').innerHTML=
+      `<div class="summary-box"><div class="summary-val">${t}</div><div class="summary-lbl">Members</div></div>`+
+      `<div class="summary-box"><div class="summary-val">${af}</div><div class="summary-lbl">Avg full HCP</div></div>`+
+      `<div class="summary-box"><div class="summary-val">${ap}</div><div class="summary-lbl">Avg ⅞ HCP</div></div>`+
+      `<div class="summary-box"><div class="summary-val">${r}</div><div class="summary-lbl">Total rounds</div></div>`;
+}
+
+function renderFilters() {
+    const c=[{id:'all',l:'All'},{id:'cat1',l:'Cat 1'},{id:'cat2',l:'Cat 2'},{id:'cat3',l:'Cat 3'},{id:'cat4',l:'Cat 4'},{id:'active',l:'Active'}];
+    document.getElementById('filters').innerHTML=c.map(x=>`<button class="filter-btn ${activeFilter===x.id?'active':''}" onclick="setFilter('${x.id}')">${x.l}</button>`).join('');
+}
+
+function setFilter(f){activeFilter=f;renderFilters();applyFilters();}
+
+function applyFilters() {
+    const q=document.querySelector('.search').value.toLowerCase().trim();
+    let f=allData;
+    if(q) f=f.filter(d=>gv(d,'name').toLowerCase().includes(q)||gv(d,'membernumber').toLowerCase().includes(q));
+    if(activeFilter==='active') f=f.filter(d=>n(gv(d,'rounds'))>0);
+    else if(activeFilter.startsWith('cat')){const cn=parseInt(activeFilter[3]);f=f.filter(d=>n(gv(d,'category'))===cn);}
+    document.getElementById('count').textContent=`Showing ${f.length} of ${allData.length} members`;
+    renderCards(f);
+}
+
+function renderCards(data) {
+    if(!data.length){document.getElementById('app').innerHTML='<div class="no-results">No members found</div>';return;}
+    document.getElementById('app').innerHTML=data.map((h,i)=>{
+        const id=gv(h,'membernumber'), nm=gv(h,'name');
+        const start=n(gv(h,'2026startinghandicap', 'startinghandicap'));
+        const full=n(gv(h,'current','full'));
+        const cur=n(gv(h,'currentplaying','playing'));
+        const cat=n(gv(h,'category')), rds=n(gv(h,'rounds'));
+        const oom=n(gv(h,'oompoints')), avg=n(gv(h,'avgpoints')), wins=n(gv(h,'wins'));
+        
+        const diff=cur-start;
+        let ch='<span class="same">No change</span>';
+        if(rds > 0) {
+            if(diff<0) ch=`<span class="improved">▼ ${Math.abs(diff)} since start</span>`;
+            else if(diff>0) ch=`<span class="worse">▲ ${diff} since start</span>`;
+        }
+
+        const cc={1:'cat-1',2:'cat-2',3:'cat-3',4:'cat-4'}[cat]||'cat-3';
+        
+        // This is where we safely fetch the event scores from Column D
+        const sc=EVENTS.map(event => {
+            const val = getPlayerScore(nm, event);
+            const isZero = val === 0 || val === '0';
+            return `<div class="score"><div class="score-venue">${VS[event]}</div><div class="score-val ${isZero?'zero':''}">${val}</div></div>`;
+        }).join('');
+        
+        return `<div class="card" style="animation-delay:${Math.min(i*.02,.3)}s">
+<div class="card-top"><div class="player-left"><div class="player-id">${id}</div><div class="player-name">${nm}</div><span class="player-cat ${cc}">Cat ${cat}</span></div>
+<div class="hcp-block"><div class="hcp-label">⅞ Playing</div><div class="hcp-current">${cur}</div><div class="hcp-details">Full: <strong>${full}</strong> · Start: ${start}</div><div class="hcp-change">${ch}</div></div></div>
+<div class="stats"><div class="stat"><div class="stat-label">Rounds</div><div class="stat-value">${rds}</div></div><div class="stat"><div class="stat-label">OOM pts</div><div class="stat-value">${oom}</div></div><div class="stat"><div class="stat-label">Avg pts</div><div class="stat-value">${avg||'—'}</div></div><div class="stat"><div class="stat-label">Wins</div><div class="stat-value">${wins}</div></div></div>
+<div class="scores-label">Stableford scores</div>
+<div class="scores-strip">${sc}</div></div>`;
+    }).join('');
+}
+
+async function init(){
+    document.getElementById('app').innerHTML = '<div class="loading">Loading member data...</div>';
+    allData = await fetchMainSheet() || [];
+    
+    document.getElementById('app').innerHTML = '<div class="loading">Loading event scores...</div>';
+    await fetchAllEventScores();
+    
+    renderSummary(allData);
+    renderFilters();
+    applyFilters();
+}
+init();
+</script>
+</body>
+</html>
